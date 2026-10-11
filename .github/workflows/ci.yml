@@ -1,0 +1,50 @@
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dependencies
+        run: python -m pip install -e '.[dev]'
+      - name: Lint
+        run: python -m ruff check app tests
+      - name: Stage 1
+        run: python -m pytest tests/test_stage1.py -v
+      - name: Stage 2
+        run: python -m pytest tests/test_stage2.py -v
+      - name: Stage 3
+        run: python -m pytest tests/test_stage3.py -v
+      - name: Stage 4
+        run: python -m pytest tests/test_stage4.py -v
+      - name: Stage 5 and coverage
+        run: python -m pytest --cov=app --cov-report=term-missing --cov-report=xml tests/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python }}
+          path: coverage.xml
+  voice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y libopus0
+      - run: python -m pip install -e '.[dev,voice]'
+      - run: python -m pytest tests/test_stage4.py -v
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t discord-adapter:test .

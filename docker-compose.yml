@@ -1,0 +1,27 @@
+services:
+  adapter:
+    build:
+      context: .
+      args:
+        ENABLE_VOICE: ${VOICE_ENABLED:-false}
+    environment:
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:?Set DISCORD_BOT_TOKEN in .env}
+      API_SECRET_KEY: ${API_SECRET_KEY:?Set API_SECRET_KEY in .env}
+      HOST: 0.0.0.0
+      PORT: 8000
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      VOICE_ENABLED: ${VOICE_ENABLED:-false}
+      MEMBERS_INTENT: ${MEMBERS_INTENT:-true}
+      MESSAGE_CONTENT_INTENT: ${MESSAGE_CONTENT_INTENT:-true}
+    ports:
+      - "127.0.0.1:${PORT:-8000}:8000"
+    init: true
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,noexec,nosuid
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 75s
